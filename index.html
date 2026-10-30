@@ -1,12 +1,1510 @@
 <!DOCTYPE html>
 <html lang="it">
+
 <head>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  >
+
   <title>Archivio del Tocco</title>
+
+
+  <style>
+
+    :root {
+      --bg:#0b0b0b;
+      --panel:#151515;
+      --line:#333;
+      --text:#f2f2f2;
+      --muted:#999;
+      --yellow:#f2c94c;
+      --red:#e16a6a;
+    }
+
+    * {
+      box-sizing:border-box;
+    }
+
+    html,
+    body {
+      margin:0;
+      padding:0;
+      min-height:100%;
+      background:var(--bg);
+      color:var(--text);
+
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+    }
+
+    body {
+      min-height:100vh;
+    }
+
+    .app {
+      width:min(1000px,100%);
+      margin:0 auto;
+      padding:30px 18px 80px;
+    }
+
+    .title {
+      color:var(--yellow);
+      text-align:center;
+      font-size:40px;
+      font-weight:900;
+      margin:10px 0 8px;
+    }
+
+    .subtitle {
+      text-align:center;
+      color:#bbb;
+      margin-bottom:25px;
+    }
+
+    .status {
+      width:max-content;
+      max-width:100%;
+
+      margin:0 auto 18px;
+
+      padding:10px 22px;
+
+      border:
+        1px solid
+        rgba(242,201,76,.45);
+
+      border-radius:999px;
+
+      color:var(--yellow);
+
+      font-weight:800;
+      font-size:14px;
+
+      text-align:center;
+    }
+
+
+    /* =====================================================
+       RICERCA VOCALE
+    ===================================================== */
+
+    .voice-wrap {
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+
+      margin-bottom:25px;
+    }
+
+    .voice-button {
+      min-width:250px;
+      min-height:52px;
+
+      padding:12px 22px;
+
+      border:
+        1px solid
+        var(--yellow);
+
+      border-radius:999px;
+
+      background:var(--yellow);
+      color:#111;
+
+      font-size:15px;
+      font-weight:900;
+
+      cursor:pointer;
+    }
+
+    .voice-button.listening {
+      box-shadow:
+        0 0 30px
+        rgba(242,201,76,.6);
+    }
+
+    .voice-message {
+      min-height:22px;
+
+      margin-top:9px;
+
+      color:#aaa;
+
+      font-size:13px;
+      text-align:center;
+    }
+
+    .voice-message.error {
+      color:#ff9c9c;
+    }
+
+
+    /* =====================================================
+       RICERCA TESTUALE
+    ===================================================== */
+
+    .search-wrap {
+      display:flex;
+      gap:10px;
+
+      margin-bottom:25px;
+    }
+
+    .search-input {
+      flex:1;
+
+      min-width:0;
+
+      padding:14px;
+
+      border:
+        1px solid
+        #444;
+
+      border-radius:10px;
+
+      background:#111;
+      color:white;
+
+      font-size:17px;
+
+      outline:none;
+    }
+
+    .search-input:focus {
+      border-color:var(--yellow);
+    }
+
+    .search-button {
+      padding:12px 18px;
+
+      border:none;
+      border-radius:10px;
+
+      background:#222;
+      color:var(--yellow);
+
+      font-weight:850;
+
+      cursor:pointer;
+    }
+
+
+    /* =====================================================
+       RECORD
+    ===================================================== */
+
+    .archive {
+      border-top:
+        1px solid
+        var(--line);
+    }
+
+    .record {
+      display:grid;
+
+      grid-template-columns:
+        130px
+        minmax(0,1fr);
+
+      gap:20px;
+
+      padding:22px 0;
+
+      border-bottom:
+        1px solid
+        var(--line);
+    }
+
+    .cover-wrap {
+      width:130px;
+      height:130px;
+
+      overflow:hidden;
+
+      border-radius:10px;
+
+      background:#181818;
+
+      border:
+        1px solid
+        #2d2d2d;
+    }
+
+    .cover {
+      width:100%;
+      height:100%;
+
+      display:block;
+
+      object-fit:cover;
+    }
+
+    .cover-placeholder {
+      width:100%;
+      height:100%;
+
+      display:flex;
+      justify-content:center;
+      align-items:center;
+
+      padding:8px;
+
+      color:#777;
+
+      text-align:center;
+      font-size:11px;
+    }
+
+    .artist {
+      color:var(--yellow);
+
+      font-size:25px;
+      font-weight:900;
+
+      line-height:1.1;
+
+      margin-bottom:7px;
+    }
+
+    .album {
+      font-size:19px;
+
+      font-style:italic;
+
+      margin-bottom:7px;
+    }
+
+    .meta {
+      color:#c9c9c9;
+
+      font-size:15px;
+
+      line-height:1.4;
+    }
+
+    .year {
+      color:var(--yellow);
+      font-weight:850;
+    }
+
+    .format {
+      margin-top:8px;
+
+      color:var(--yellow);
+
+      font-weight:900;
+
+      text-transform:uppercase;
+    }
+
+    .genre {
+      display:inline-block;
+
+      margin-top:10px;
+
+      padding:6px 12px;
+
+      border:
+        1px solid
+        rgba(242,201,76,.55);
+
+      border-radius:999px;
+
+      color:var(--yellow);
+
+      font-size:12px;
+      font-weight:900;
+    }
+
+    .empty {
+      padding:40px 0;
+
+      color:#888;
+
+      text-align:center;
+    }
+
+
+    @media (max-width:600px) {
+
+      .app {
+        padding:
+          20px
+          12px
+          80px;
+      }
+
+      .title {
+        font-size:30px;
+      }
+
+      .record {
+        grid-template-columns:
+          125px
+          minmax(0,1fr);
+
+        gap:14px;
+      }
+
+      .cover-wrap {
+        width:125px;
+        height:125px;
+      }
+
+      .artist {
+        font-size:25px;
+      }
+
+      .album {
+        font-size:19px;
+      }
+
+      .meta,
+      .format {
+        font-size:16px;
+      }
+
+      .search-wrap {
+        flex-direction:column;
+      }
+
+      .search-button {
+        min-height:48px;
+      }
+
+      .voice-button {
+        width:min(280px,100%);
+      }
+
+    }
+
+  </style>
+
 </head>
-<body style="background:#111;color:#f2c94c;font-family:Arial,sans-serif;text-align:center;padding:60px 20px;">
-  <h1>ARCHIVIO DEL TOCCO</h1>
-  <p style="color:white;">Test GitHub Pages riuscito.</p>
+
+
+<body>
+
+
+<main class="app">
+
+  <h1 class="title">
+    ARCHIVIO DEL TOCCO
+  </h1>
+
+  <div class="subtitle">
+    Nuova PWA
+  </div>
+
+
+  <div
+    id="status"
+    class="status"
+  >
+    COLLEGAMENTO ALL'ARCHIVIO...
+  </div>
+
+
+  <div class="voice-wrap">
+
+    <button
+      id="voiceButton"
+      class="voice-button"
+      onclick="startVoiceSearch()"
+    >
+      🎤 RICERCA RAPIDA
+    </button>
+
+    <div
+      id="voiceMessage"
+      class="voice-message"
+    ></div>
+
+  </div>
+
+
+  <div class="search-wrap">
+
+    <input
+      id="searchInput"
+      class="search-input"
+      type="search"
+      placeholder="Cerca autore o titolo"
+      oninput="runSearch()"
+    >
+
+    <button
+      class="search-button"
+      onclick="clearSearch()"
+    >
+      AZZERA
+    </button>
+
+  </div>
+
+
+  <section
+    id="archive"
+    class="archive"
+  ></section>
+
+</main>
+
+
+
+<script>
+
+
+/* =========================================================
+   URL API APPS SCRIPT
+========================================================= */
+
+const API_URL =
+  'https://script.google.com/macros/s/AKfycbw5ysUVlTVgq3sgynZA1MOtrlAZgHhOnk0BiAKoWLEA2Rj5OleFZAy07NB4i7zg9WW_/exec';
+
+
+let archiveItems = [];
+
+let voiceRecognition = null;
+
+
+
+/* =========================================================
+   AVVIO
+========================================================= */
+
+document.addEventListener(
+  'DOMContentLoaded',
+  function() {
+
+    setupVoiceSearch();
+
+    loadArchive();
+
+  }
+);
+
+
+/* =========================================================
+   JSONP
+========================================================= */
+
+function jsonpRequest(
+  action,
+  params
+) {
+
+  return new Promise(
+    function(resolve,reject) {
+
+      const callbackName =
+        '__jsonp_' +
+        Date.now() +
+        '_' +
+        Math.floor(
+          Math.random() *
+          100000
+        );
+
+
+      const script =
+        document.createElement(
+          'script'
+        );
+
+
+      const query =
+        new URLSearchParams();
+
+
+      query.set(
+        'api',
+        '1'
+      );
+
+
+      query.set(
+        'action',
+        action
+      );
+
+
+      query.set(
+        'callback',
+        callbackName
+      );
+
+
+      if (params) {
+
+        Object.keys(
+          params
+        )
+        .forEach(
+          function(key) {
+
+            query.set(
+              key,
+              params[key]
+            );
+
+          }
+        );
+
+      }
+
+
+      let timeout =
+        setTimeout(
+          function() {
+
+            cleanup();
+
+            reject(
+              new Error(
+                'Timeout collegamento API.'
+              )
+            );
+
+          },
+          20000
+        );
+
+
+      function cleanup() {
+
+        clearTimeout(
+          timeout
+        );
+
+
+        if (
+          script.parentNode
+        ) {
+
+          script.parentNode.removeChild(
+            script
+          );
+
+        }
+
+
+        try {
+
+          delete window[
+            callbackName
+          ];
+
+        } catch(error) {
+
+          window[
+            callbackName
+          ] = undefined;
+
+        }
+
+      }
+
+
+      window[
+        callbackName
+      ] =
+        function(data) {
+
+          cleanup();
+
+          resolve(
+            data
+          );
+
+        };
+
+
+      script.onerror =
+        function() {
+
+          cleanup();
+
+          reject(
+            new Error(
+              'Errore di collegamento con Apps Script.'
+            )
+          );
+
+        };
+
+
+      script.src =
+        API_URL +
+        '?' +
+        query.toString();
+
+
+      document.body.appendChild(
+        script
+      );
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   CARICA ARCHIVIO
+========================================================= */
+
+async function loadArchive() {
+
+  const status =
+    document.getElementById(
+      'status'
+    );
+
+
+  status.textContent =
+    'COLLEGAMENTO ALL\'ARCHIVIO...';
+
+
+  try {
+
+    const response =
+      await jsonpRequest(
+        'archive'
+      );
+
+
+    if (
+      !response ||
+      !response.success
+    ) {
+
+      throw new Error(
+        response &&
+        response.error
+          ? response.error
+          : 'Risposta API non valida.'
+      );
+
+    }
+
+
+    archiveItems =
+      sortItems(
+        response.items || []
+      );
+
+
+    status.textContent =
+      archiveItems.length +
+      (
+        archiveItems.length === 1
+          ? ' DISCO PRESENTE'
+          : ' DISCHI PRESENTI'
+      );
+
+
+    renderArchive(
+      archiveItems
+    );
+
+  }
+
+  catch(error) {
+
+    console.error(
+      error
+    );
+
+
+    status.textContent =
+      'ERRORE COLLEGAMENTO';
+
+
+    document
+      .getElementById(
+        'archive'
+      )
+      .innerHTML =
+      `
+        <div class="empty">
+          ${escapeHtml(error.message)}
+        </div>
+      `;
+
+  }
+
+}
+
+
+/* =========================================================
+   ORDINAMENTO
+========================================================= */
+
+function artistSortKey(artist) {
+
+  let value =
+    normalize(
+      artist
+    );
+
+
+  value =
+    value.replace(
+      /^(the|a|an|il|lo|la|i|gli|le|un|uno|una)\s+/i,
+      ''
+    );
+
+
+  const parts =
+    value
+      .split(/\s+/)
+      .filter(Boolean);
+
+
+  if (!parts.length) {
+    return '';
+  }
+
+
+  return (
+    parts[
+      parts.length - 1
+    ] +
+    ' ' +
+    value
+  );
+
+}
+
+
+function sortItems(items) {
+
+  return [
+    ...items
+  ]
+  .sort(
+    function(a,b) {
+
+      const artistCompare =
+        artistSortKey(
+          a.autore
+        )
+        .localeCompare(
+          artistSortKey(
+            b.autore
+          ),
+          'it',
+          {
+            sensitivity:'base'
+          }
+        );
+
+
+      if (
+        artistCompare !== 0
+      ) {
+
+        return artistCompare;
+
+      }
+
+
+      return String(
+        a.titolo || ''
+      )
+      .localeCompare(
+        String(
+          b.titolo || ''
+        ),
+        'it',
+        {
+          sensitivity:'base'
+        }
+      );
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   RENDER ARCHIVIO
+========================================================= */
+
+function renderArchive(items) {
+
+  const container =
+    document.getElementById(
+      'archive'
+    );
+
+
+  if (
+    !items.length
+  ) {
+
+    container.innerHTML =
+      `
+        <div class="empty">
+          Nessun disco trovato.
+        </div>
+      `;
+
+    return;
+
+  }
+
+
+  container.innerHTML =
+    items
+      .map(
+        function(item) {
+
+          return recordHtml(
+            item
+          );
+
+        }
+      )
+      .join('');
+
+
+  items.forEach(
+    function(item) {
+
+      if (
+        item.hasPhoto
+      ) {
+
+        loadCover(
+          item.id
+        );
+
+      }
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   RECORD
+========================================================= */
+
+function recordHtml(item) {
+
+  const metadata = [];
+
+
+  if (
+    item.label
+  ) {
+
+    metadata.push(
+      escapeHtml(
+        item.label
+      )
+    );
+
+  }
+
+
+  if (
+    item.annoPubblicazione
+  ) {
+
+    metadata.push(
+      '<span class="year">℗ ' +
+      escapeHtml(
+        item.annoPubblicazione
+      ) +
+      '</span>'
+    );
+
+  }
+
+
+  if (
+    item.annoStampa
+  ) {
+
+    metadata.push(
+      'R ' +
+      escapeHtml(
+        item.annoStampa
+      )
+    );
+
+  }
+
+
+  return `
+
+    <article class="record">
+
+      <div class="cover-wrap">
+
+        <div
+          id="placeholder-${item.id}"
+          class="cover-placeholder"
+        >
+          ${
+            item.hasPhoto
+              ? 'CARICAMENTO...'
+              : 'FOTO NON DISPONIBILE'
+          }
+        </div>
+
+        <img
+          id="cover-${item.id}"
+          class="cover"
+          style="display:none;"
+          alt="${escapeHtml(item.autore)}"
+        >
+
+      </div>
+
+
+      <div>
+
+        <div class="artist">
+          ${escapeHtml(item.autore)}
+        </div>
+
+
+        <div class="album">
+          “${escapeHtml(item.titolo)}”
+        </div>
+
+
+        ${
+          metadata.length
+            ? `
+              <div class="meta">
+                (${metadata.join(', ')})
+              </div>
+            `
+            : ''
+        }
+
+
+        ${
+          item.formato
+            ? `
+              <div class="format">
+                ${escapeHtml(item.formato)}
+              </div>
+            `
+            : ''
+        }
+
+
+        ${
+          item.genere
+            ? `
+              <div class="genre">
+                ${escapeHtml(item.genere)}
+              </div>
+            `
+            : ''
+        }
+
+      </div>
+
+    </article>
+
+  `;
+
+}
+
+
+/* =========================================================
+   COPERTINE
+========================================================= */
+
+async function loadCover(id) {
+
+  try {
+
+    const response =
+      await jsonpRequest(
+        'cover',
+        {
+          id:id
+        }
+      );
+
+
+    if (
+      !response ||
+      !response.success ||
+      !response.data
+    ) {
+
+      return;
+
+    }
+
+
+    const image =
+      document.getElementById(
+        'cover-' +
+        id
+      );
+
+
+    const placeholder =
+      document.getElementById(
+        'placeholder-' +
+        id
+      );
+
+
+    if (!image) {
+      return;
+    }
+
+
+    image.src =
+      response.data;
+
+
+    image.onload =
+      function() {
+
+        image.style.display =
+          'block';
+
+
+        if (
+          placeholder
+        ) {
+
+          placeholder.style.display =
+            'none';
+
+        }
+
+      };
+
+  }
+
+  catch(error) {
+
+    console.error(
+      'Foto ' +
+      id,
+      error
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   RICERCA TESTUALE
+========================================================= */
+
+function runSearch() {
+
+  const query =
+    normalize(
+      document
+        .getElementById(
+          'searchInput'
+        )
+        .value
+    );
+
+
+  if (!query) {
+
+    renderArchive(
+      archiveItems
+    );
+
+    return;
+
+  }
+
+
+  const results =
+    archiveItems.filter(
+      function(item) {
+
+        return (
+          normalize(
+            item.autore
+          ).includes(query)
+
+          ||
+
+          normalize(
+            item.titolo
+          ).includes(query)
+
+          ||
+
+          normalize(
+            item.label
+          ).includes(query)
+
+          ||
+
+          normalize(
+            item.genere
+          ).includes(query)
+
+          ||
+
+          normalize(
+            item.annoPubblicazione
+          ).includes(query)
+
+          ||
+
+          normalize(
+            item.annoStampa
+          ).includes(query)
+        );
+
+      }
+    );
+
+
+  renderArchive(
+    results
+  );
+
+}
+
+
+function clearSearch() {
+
+  document
+    .getElementById(
+      'searchInput'
+    )
+    .value =
+    '';
+
+
+  renderArchive(
+    archiveItems
+  );
+
+}
+
+
+/* =========================================================
+   RICERCA VOCALE
+========================================================= */
+
+function setupVoiceSearch() {
+
+  const Recognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
+
+
+  if (!Recognition) {
+
+    setVoiceMessage(
+      'Riconoscimento vocale non disponibile su questo browser.',
+      true
+    );
+
+    return;
+
+  }
+
+
+  voiceRecognition =
+    new Recognition();
+
+
+  voiceRecognition.lang =
+    'it-IT';
+
+
+  voiceRecognition.continuous =
+    false;
+
+
+  voiceRecognition.interimResults =
+    false;
+
+
+  voiceRecognition.onstart =
+    function() {
+
+      document
+        .getElementById(
+          'voiceButton'
+        )
+        .classList.add(
+          'listening'
+        );
+
+
+      setVoiceMessage(
+        'Sto ascoltando...',
+        false
+      );
+
+    };
+
+
+  voiceRecognition.onresult =
+    function(event) {
+
+      const text =
+        event
+          .results[0][0]
+          .transcript
+          .trim();
+
+
+      setVoiceMessage(
+        'Ho capito: “' +
+        text +
+        '”',
+        false
+      );
+
+
+      executeVoiceCommand(
+        text
+      );
+
+    };
+
+
+  voiceRecognition.onerror =
+    function(event) {
+
+      setVoiceMessage(
+        'Errore voce: ' +
+        event.error,
+        true
+      );
+
+    };
+
+
+  voiceRecognition.onend =
+    function() {
+
+      document
+        .getElementById(
+          'voiceButton'
+        )
+        .classList.remove(
+          'listening'
+        );
+
+    };
+
+}
+
+
+function startVoiceSearch() {
+
+  if (
+    !voiceRecognition
+  ) {
+
+    setVoiceMessage(
+      'Riconoscimento vocale non disponibile.',
+      true
+    );
+
+    return;
+
+  }
+
+
+  setVoiceMessage(
+    'Attivazione microfono...',
+    false
+  );
+
+
+  try {
+
+    voiceRecognition.start();
+
+  }
+
+  catch(error) {
+
+    setVoiceMessage(
+      error.message,
+      true
+    );
+
+  }
+
+}
+
+
+function executeVoiceCommand(text) {
+
+  let value =
+    String(
+      text || ''
+    )
+    .trim();
+
+
+  value =
+    value
+      .replace(
+        /^fammi vedere\s+/i,
+        ''
+      )
+      .replace(
+        /^mostrami\s+/i,
+        ''
+      )
+      .replace(
+        /^cercami\s+/i,
+        ''
+      )
+      .replace(
+        /^cerca\s+/i,
+        ''
+      )
+      .replace(
+        /^trova\s+/i,
+        ''
+      )
+      .replace(
+        /^tutti\s+/i,
+        ''
+      )
+      .replace(
+        /^tutte\s+/i,
+        ''
+      )
+      .replace(
+        /^(i|gli|le)\s+/i,
+        ''
+      )
+      .replace(
+        /^(dischi|album|vinili|cd|cassette)\s+/i,
+        ''
+      )
+      .replace(
+        /^(di|dei|degli|delle|del|della)\s+/i,
+        ''
+      )
+      .trim();
+
+
+  document
+    .getElementById(
+      'searchInput'
+    )
+    .value =
+    value;
+
+
+  runSearch();
+
+}
+
+
+function setVoiceMessage(
+  text,
+  error
+) {
+
+  const element =
+    document.getElementById(
+      'voiceMessage'
+    );
+
+
+  element.textContent =
+    text || '';
+
+
+  element.classList.toggle(
+    'error',
+    !!error
+  );
+
+}
+
+
+/* =========================================================
+   UTILITÀ
+========================================================= */
+
+function normalize(value) {
+
+  return String(
+    value || ''
+  )
+  .trim()
+  .toLowerCase()
+  .normalize('NFD')
+  .replace(
+    /[\u0300-\u036f]/g,
+    ''
+  );
+
+}
+
+
+function escapeHtml(value) {
+
+  return String(
+    value == null
+      ? ''
+      : value
+  )
+  .replace(
+    /&/g,
+    '&amp;'
+  )
+  .replace(
+    /</g,
+    '&lt;'
+  )
+  .replace(
+    />/g,
+    '&gt;'
+  )
+  .replace(
+    /"/g,
+    '&quot;'
+  )
+  .replace(
+    /'/g,
+    '&#039;'
+  );
+
+}
+
+</script>
+
 </body>
+
 </html>
