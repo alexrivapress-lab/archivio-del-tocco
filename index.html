@@ -94,59 +94,378 @@
     }
 
 
-    /* =====================================================
-       RICERCA VOCALE
-    ===================================================== */
+    /* =========================================================
+   RICERCA VOCALE
+========================================================= */
 
-    .voice-wrap {
-      display:flex;
-      flex-direction:column;
-      align-items:center;
+function setupVoiceSearch() {
 
-      margin-bottom:25px;
-    }
+  const Recognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
 
-    .voice-button {
-      min-width:250px;
-      min-height:52px;
 
-      padding:12px 22px;
+  if (!Recognition) {
 
-      border:
-        1px solid
-        var(--yellow);
+    setVoiceMessage(
+      'Riconoscimento vocale non disponibile su questo browser.',
+      true
+    );
 
-      border-radius:999px;
+    return;
 
-      background:var(--yellow);
-      color:#111;
+  }
 
-      font-size:15px;
-      font-weight:900;
 
-      cursor:pointer;
-    }
+  voiceRecognition =
+    new Recognition();
 
-    .voice-button.listening {
-      box-shadow:
-        0 0 30px
-        rgba(242,201,76,.6);
-    }
 
-    .voice-message {
-      min-height:22px;
+  voiceRecognition.lang =
+    'it-IT';
 
-      margin-top:9px;
 
-      color:#aaa;
+  voiceRecognition.continuous =
+    false;
 
-      font-size:13px;
-      text-align:center;
-    }
 
-    .voice-message.error {
-      color:#ff9c9c;
-    }
+  voiceRecognition.interimResults =
+    false;
+
+
+  voiceRecognition.maxAlternatives =
+    1;
+
+
+  voiceRecognition.onstart =
+    function() {
+
+      document
+        .getElementById(
+          'voiceButton'
+        )
+        .classList.add(
+          'listening'
+        );
+
+
+      setVoiceMessage(
+        'Sto ascoltando...',
+        false
+      );
+
+    };
+
+
+  voiceRecognition.onspeechend =
+    function() {
+
+      try {
+
+        voiceRecognition.stop();
+
+      } catch(error) {
+
+        console.error(error);
+
+      }
+
+  };
+
+
+  voiceRecognition.onresult =
+    function(event) {
+
+      const text =
+        String(
+          event
+            .results[0][0]
+            .transcript || ''
+        )
+        .trim();
+
+
+      try {
+
+        voiceRecognition.stop();
+
+      } catch(error) {
+
+        console.error(error);
+
+      }
+
+
+      if (!text) {
+
+        setVoiceMessage(
+          'Non ho capito. Riprova.',
+          true
+        );
+
+        return;
+
+      }
+
+
+      setVoiceMessage(
+        'Ho capito: “' +
+        text +
+        '”',
+        false
+      );
+
+
+      executeVoiceCommand(
+        text
+      );
+
+    };
+
+
+  voiceRecognition.onerror =
+    function(event) {
+
+      let message =
+        'Errore voce: ' +
+        event.error;
+
+
+      if (
+        event.error ===
+        'no-speech'
+      ) {
+
+        message =
+          'Non ho sentito nulla. Riprova.';
+
+      }
+
+
+      if (
+        event.error ===
+        'aborted'
+      ) {
+
+        message =
+          'Ascolto interrotto.';
+
+      }
+
+
+      setVoiceMessage(
+        message,
+        true
+      );
+
+    };
+
+
+  voiceRecognition.onend =
+    function() {
+
+      document
+        .getElementById(
+          'voiceButton'
+        )
+        .classList.remove(
+          'listening'
+        );
+
+
+      const button =
+        document.getElementById(
+          'voiceButton'
+        );
+
+
+      button.textContent =
+        '🎤 RICERCA RAPIDA';
+
+    };
+
+}
+
+
+function startVoiceSearch() {
+
+  if (
+    !voiceRecognition
+  ) {
+
+    setVoiceMessage(
+      'Riconoscimento vocale non disponibile.',
+      true
+    );
+
+    return;
+
+  }
+
+
+  setVoiceMessage(
+    'Attivazione microfono...',
+    false
+  );
+
+
+  const button =
+    document.getElementById(
+      'voiceButton'
+    );
+
+
+  button.textContent =
+    '🎤 PARLA...';
+
+
+  try {
+
+    voiceRecognition.start();
+
+  }
+
+  catch(error) {
+
+    setVoiceMessage(
+      error.message,
+      true
+    );
+
+  }
+
+}
+
+
+function executeVoiceCommand(text) {
+
+  let value =
+    String(
+      text || ''
+    )
+    .trim();
+
+
+  /*
+    Ripuliamo le formule più comuni,
+    ma se non riconosciamo nulla
+    usiamo comunque l'intera frase.
+  */
+
+  value =
+    value
+      .replace(
+        /^fammi vedere\s+/i,
+        ''
+      )
+      .replace(
+        /^mostrami\s+/i,
+        ''
+      )
+      .replace(
+        /^mostra\s+/i,
+        ''
+      )
+      .replace(
+        /^cercami\s+/i,
+        ''
+      )
+      .replace(
+        /^cerca\s+/i,
+        ''
+      )
+      .replace(
+        /^trova\s+/i,
+        ''
+      )
+      .replace(
+        /^trovami\s+/i,
+        ''
+      )
+      .replace(
+        /^voglio vedere\s+/i,
+        ''
+      )
+      .replace(
+        /^fammi vedere tutti\s+/i,
+        ''
+      )
+      .replace(
+        /^fammi vedere tutte\s+/i,
+        ''
+      )
+      .replace(
+        /^(i|gli|le)\s+/i,
+        ''
+      )
+      .replace(
+        /^(dischi|album|vinili|cd|cassette)\s+/i,
+        ''
+      )
+      .replace(
+        /^(di|dei|degli|delle|del|della)\s+/i,
+        ''
+      )
+      .replace(
+        /[?.!,;:]+$/g,
+        ''
+      )
+      .replace(
+        /\s+/g,
+        ' '
+      )
+      .trim();
+
+
+  /*
+    Se dopo la pulizia rimane poco o nulla,
+    usiamo la frase originale.
+  */
+
+  if (!value) {
+
+    value =
+      String(
+        text || ''
+      ).trim();
+
+  }
+
+
+  document
+    .getElementById(
+      'searchInput'
+    )
+    .value =
+    value;
+
+
+  runSearch();
+
+}
+
+
+function setVoiceMessage(
+  text,
+  error
+) {
+
+  const element =
+    document.getElementById(
+      'voiceMessage'
+    );
+
+
+  element.textContent =
+    text || '';
+
+
+  element.classList.toggle(
+    'error',
+    !!error
+  );
+
+}
 
 
     /* =====================================================
