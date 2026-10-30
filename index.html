@@ -94,493 +94,58 @@
     }
 
 
-    /* =========================================================
-   RICERCA VOCALE - VERSIONE ROBUSTA IOS / CHROME
-========================================================= */
+    /* =====================================================
+       RICERCA VOCALE
+    ===================================================== */
 
-let voiceRecognition = null;
-let voiceBusy = false;
+    .voice-wrap {
+      display:flex;
+      flex-direction:column;
+      align-items:center;
 
+      margin-bottom:22px;
+    }
 
-/* =========================================================
-   AVVIO RICERCA VOCALE
-========================================================= */
+    .voice-button {
+      min-height:52px;
 
-function startVoiceSearch() {
+      padding:13px 24px;
 
-  if (voiceBusy) {
-    return;
-  }
+      border:none;
+      border-radius:12px;
 
+      background:var(--yellow);
+      color:#111;
 
-  const Recognition =
-    window.SpeechRecognition ||
-    window.webkitSpeechRecognition;
+      font-size:16px;
+      font-weight:900;
 
+      cursor:pointer;
+    }
 
-  if (!Recognition) {
+    .voice-button.listening {
+      background:#fff;
+    }
 
-    setVoiceMessage(
-      'Riconoscimento vocale non disponibile su questo browser.',
-      true
-    );
+    .voice-button:disabled {
+      opacity:.8;
+      cursor:default;
+    }
 
-    return;
-  }
+    .voice-message {
+      min-height:24px;
 
+      margin-top:10px;
 
-  /*
-    Creiamo SEMPRE una nuova istanza.
-    Su iPhone/Chrome il riutilizzo della stessa
-    istanza può bloccarsi dopo la prima ricerca.
-  */
+      color:#bbb;
 
-  voiceRecognition =
-    new Recognition();
+      font-size:14px;
+      text-align:center;
+    }
 
-
-  voiceRecognition.lang =
-    'it-IT';
-
-
-  voiceRecognition.continuous =
-    false;
-
-
-  voiceRecognition.interimResults =
-    false;
-
-
-  voiceRecognition.maxAlternatives =
-    1;
-
-
-  voiceBusy =
-    true;
-
-
-  const button =
-    document.getElementById(
-      'voiceButton'
-    );
-
-
-  button.disabled =
-    true;
-
-
-  button.classList.add(
-    'listening'
-  );
-
-
-  button.textContent =
-    '🎤 PARLA...';
-
-
-  setVoiceMessage(
-    'Sto ascoltando...',
-    false
-  );
-
-
-  /*
-    Timeout di sicurezza:
-    se iOS non chiude l'ascolto da solo,
-    lo fermiamo comunque.
-  */
-
-  const safetyTimer =
-    setTimeout(
-      function() {
-
-        try {
-
-          if (
-            voiceRecognition
-          ) {
-
-            voiceRecognition.stop();
-
-          }
-
-        } catch(error) {
-
-          console.error(
-            error
-          );
-
-        }
-
-      },
-      8000
-    );
-
-
-  voiceRecognition.onresult =
-    function(event) {
-
-      clearTimeout(
-        safetyTimer
-      );
-
-
-      const text =
-        String(
-          event &&
-          event.results &&
-          event.results[0] &&
-          event.results[0][0]
-            ? event.results[0][0].transcript
-            : ''
-        )
-        .trim();
-
-
-      /*
-        Fermiamo subito il riconoscimento.
-      */
-
-      try {
-
-        voiceRecognition.stop();
-
-      } catch(error) {
-
-        console.error(
-          error
-        );
-
-      }
-
-
-      if (!text) {
-
-        setVoiceMessage(
-          'Non ho capito. Riprova.',
-          true
-        );
-
-        return;
-
-      }
-
-
-      setVoiceMessage(
-        'Ho capito: “' +
-        text +
-        '”',
-        false
-      );
-
-
-      executeVoiceCommand(
-        text
-      );
-
-    };
-
-
-  voiceRecognition.onerror =
-    function(event) {
-
-      clearTimeout(
-        safetyTimer
-      );
-
-
-      const errorCode =
-        event &&
-        event.error
-          ? event.error
-          : 'errore-sconosciuto';
-
-
-      /*
-        "aborted" spesso arriva dopo stop().
-        Non lo trattiamo come errore grave.
-      */
-
-      if (
-        errorCode ===
-        'aborted'
-      ) {
-
-        return;
-
-      }
-
-
-      let message =
-        'Errore voce: ' +
-        errorCode;
-
-
-      if (
-        errorCode ===
-        'no-speech'
-      ) {
-
-        message =
-          'Non ho sentito nulla. Riprova.';
-
-      }
-
-
-      if (
-        errorCode ===
-        'network'
-      ) {
-
-        message =
-          'Errore del servizio vocale. Riprova.';
-
-      }
-
-
-      if (
-        errorCode ===
-        'not-allowed'
-      ) {
-
-        message =
-          'Accesso al microfono non consentito.';
-
-      }
-
-
-      setVoiceMessage(
-        message,
-        true
-      );
-
-    };
-
-
-  voiceRecognition.onend =
-    function() {
-
-      clearTimeout(
-        safetyTimer
-      );
-
-
-      /*
-        Reset completo.
-      */
-
-      voiceBusy =
-        false;
-
-
-      button.disabled =
-        false;
-
-
-      button.classList.remove(
-        'listening'
-      );
-
-
-      button.textContent =
-        '🎤 RICERCA RAPIDA';
-
-
-      /*
-        Eliminiamo l'istanza.
-        La prossima ricerca ne creerà una nuova.
-      */
-
-      voiceRecognition =
-        null;
-
-    };
-
-
-  try {
-
-    voiceRecognition.start();
-
-  }
-
-  catch(error) {
-
-    clearTimeout(
-      safetyTimer
-    );
-
-
-    voiceBusy =
-      false;
-
-
-    button.disabled =
-      false;
-
-
-    button.classList.remove(
-      'listening'
-    );
-
-
-    button.textContent =
-      '🎤 RICERCA RAPIDA';
-
-
-    voiceRecognition =
-      null;
-
-
-    setVoiceMessage(
-      'Impossibile avviare il microfono. Riprova.',
-      true
-    );
-
-  }
-
-}
-
-
-/* =========================================================
-   INTERPRETA COMANDO VOCALE
-========================================================= */
-
-function executeVoiceCommand(text) {
-
-  let value =
-    String(
-      text || ''
-    )
-    .trim();
-
-
-  /*
-    Prima proviamo a togliere le frasi introduttive.
-  */
-
-  value =
-    value
-      .replace(
-        /^fammi vedere\s+/i,
-        ''
-      )
-      .replace(
-        /^mostrami\s+/i,
-        ''
-      )
-      .replace(
-        /^mostra\s+/i,
-        ''
-      )
-      .replace(
-        /^cercami\s+/i,
-        ''
-      )
-      .replace(
-        /^cerca\s+/i,
-        ''
-      )
-      .replace(
-        /^trova\s+/i,
-        ''
-      )
-      .replace(
-        /^trovami\s+/i,
-        ''
-      )
-      .replace(
-        /^voglio vedere\s+/i,
-        ''
-      )
-      .replace(
-        /^fammi vedere tutti\s+/i,
-        ''
-      )
-      .replace(
-        /^fammi vedere tutte\s+/i,
-        ''
-      )
-      .replace(
-        /^(i|gli|le)\s+/i,
-        ''
-      )
-      .replace(
-        /^(dischi|album|vinili|cd|cassette)\s+/i,
-        ''
-      )
-      .replace(
-        /^(di|dei|degli|delle|del|della)\s+/i,
-        ''
-      )
-      .replace(
-        /[?.!,;:]+$/g,
-        ''
-      )
-      .replace(
-        /\s+/g,
-        ' '
-      )
-      .trim();
-
-
-  /*
-    Se la pulizia svuota tutto,
-    usiamo la frase originale.
-  */
-
-  if (!value) {
-
-    value =
-      String(
-        text || ''
-      ).trim();
-
-  }
-
-
-  document
-    .getElementById(
-      'searchInput'
-    )
-    .value =
-    value;
-
-
-  runSearch();
-
-}
-
-
-/* =========================================================
-   MESSAGGIO VOCALE
-========================================================= */
-
-function setVoiceMessage(
-  text,
-  error
-) {
-
-  const element =
-    document.getElementById(
-      'voiceMessage'
-    );
-
-
-  if (!element) {
-    return;
-  }
-
-
-  element.textContent =
-    text || '';
-
-
-  element.classList.toggle(
-    'error',
-    !!error
-  );
-
-}
+    .voice-message.error {
+      color:var(--red);
+    }
 
 
     /* =====================================================
@@ -661,6 +226,8 @@ function setVoiceMessage(
     }
 
     .cover-wrap {
+      position:relative;
+
       width:130px;
       height:130px;
 
@@ -911,7 +478,8 @@ const API_URL =
 let archiveItems = [];
 
 let voiceRecognition = null;
-
+let voiceSession = 0;
+let voiceTimer = null;
 
 
 /* =========================================================
@@ -921,8 +489,6 @@ let voiceRecognition = null;
 document.addEventListener(
   'DOMContentLoaded',
   function() {
-
-    setupVoiceSearch();
 
     loadArchive();
 
@@ -1646,77 +1212,108 @@ function clearSearch() {
 
 
 /* =========================================================
-   RICERCA VOCALE - IOS SAFE
+   RESET MICROFONO
 ========================================================= */
-
-let voiceRecognition = null;
-let voiceSession = 0;
-let voiceTimer = null;
-
 
 function resetVoiceUI() {
 
   const button =
-    document.getElementById('voiceButton');
+    document.getElementById(
+      'voiceButton'
+    );
+
 
   if (button) {
 
-    button.disabled = false;
+    button.disabled =
+      false;
+
 
     button.classList.remove(
       'listening'
     );
 
+
     button.textContent =
       '🎤 RICERCA RAPIDA';
+
   }
+
 }
 
 
 function destroyVoiceRecognition() {
 
-  if (voiceTimer) {
+  if (
+    voiceTimer
+  ) {
 
     clearTimeout(
       voiceTimer
     );
 
-    voiceTimer = null;
+
+    voiceTimer =
+      null;
+
   }
 
 
-  if (voiceRecognition) {
+  if (
+    voiceRecognition
+  ) {
 
     try {
 
-      voiceRecognition.onresult = null;
-      voiceRecognition.onerror = null;
-      voiceRecognition.onend = null;
-      voiceRecognition.onnomatch = null;
-      voiceRecognition.onspeechend = null;
+      voiceRecognition.onresult =
+        null;
+
+      voiceRecognition.onerror =
+        null;
+
+      voiceRecognition.onend =
+        null;
+
+      voiceRecognition.onnomatch =
+        null;
+
+      voiceRecognition.onspeechend =
+        null;
+
 
       voiceRecognition.abort();
 
-    } catch(error) {
+    }
+
+    catch(error) {
 
       console.log(
         'Voice abort:',
         error
       );
+
     }
+
   }
 
 
-  voiceRecognition = null;
+  voiceRecognition =
+    null;
+
 
   resetVoiceUI();
+
 }
 
+
+/* =========================================================
+   RICERCA VOCALE
+========================================================= */
 
 function startVoiceSearch() {
 
   /*
-    Uccidiamo qualunque sessione precedente.
+    Elimina qualsiasi vecchia sessione.
   */
 
   destroyVoiceRecognition();
@@ -1727,7 +1324,9 @@ function startVoiceSearch() {
     window.webkitSpeechRecognition;
 
 
-  if (!Recognition) {
+  if (
+    !Recognition
+  ) {
 
     setVoiceMessage(
       'Riconoscimento vocale non disponibile.',
@@ -1735,10 +1334,12 @@ function startVoiceSearch() {
     );
 
     return;
+
   }
 
 
   voiceSession++;
+
 
   const thisSession =
     voiceSession;
@@ -1774,16 +1375,22 @@ function startVoiceSearch() {
     );
 
 
-  if (button) {
+  if (
+    button
+  ) {
 
-    button.disabled = true;
+    button.disabled =
+      true;
+
 
     button.classList.add(
       'listening'
     );
 
+
     button.textContent =
       '🎤 PARLA...';
+
   }
 
 
@@ -1794,11 +1401,11 @@ function startVoiceSearch() {
 
 
   /*
-    BLOCCO DI SICUREZZA IOS
+    Timeout di sicurezza.
 
-    Se WebKit resta appeso e non genera
-    nessun evento, dopo 6 secondi
-    azzeriamo comunque tutto.
+    Anche se iOS si blocca,
+    dopo 6 secondi liberiamo
+    comunque il pulsante.
   */
 
   voiceTimer =
@@ -1806,9 +1413,12 @@ function startVoiceSearch() {
       function() {
 
         if (
-          thisSession !== voiceSession
+          thisSession !==
+          voiceSession
         ) {
+
           return;
+
         }
 
 
@@ -1829,13 +1439,17 @@ function startVoiceSearch() {
     function(event) {
 
       if (
-        thisSession !== voiceSession
+        thisSession !==
+        voiceSession
       ) {
+
         return;
+
       }
 
 
-      let text = '';
+      let text =
+        '';
 
 
       try {
@@ -1846,23 +1460,23 @@ function startVoiceSearch() {
             .transcript
             .trim();
 
-      } catch(error) {
+      }
+
+      catch(error) {
 
         console.error(
           error
         );
+
       }
 
-
-      /*
-        PRIMA resettiamo completamente
-        il microfono.
-      */
 
       destroyVoiceRecognition();
 
 
-      if (!text) {
+      if (
+        !text
+      ) {
 
         setVoiceMessage(
           'Non ho capito. Riprova.',
@@ -1870,6 +1484,7 @@ function startVoiceSearch() {
         );
 
         return;
+
       }
 
 
@@ -1880,12 +1495,6 @@ function startVoiceSearch() {
         false
       );
 
-
-      /*
-        Lasciamo a iOS il tempo
-        di chiudere la sessione audio
-        prima della ricerca.
-      */
 
       setTimeout(
         function() {
@@ -1905,9 +1514,12 @@ function startVoiceSearch() {
     function(event) {
 
       if (
-        thisSession !== voiceSession
+        thisSession !==
+        voiceSession
       ) {
+
         return;
+
       }
 
 
@@ -1922,14 +1534,18 @@ function startVoiceSearch() {
 
 
       if (
-        code === 'aborted'
+        code ===
+        'aborted'
       ) {
+
         return;
+
       }
 
 
       if (
-        code === 'no-speech'
+        code ===
+        'no-speech'
       ) {
 
         setVoiceMessage(
@@ -1938,6 +1554,7 @@ function startVoiceSearch() {
         );
 
         return;
+
       }
 
 
@@ -1954,9 +1571,12 @@ function startVoiceSearch() {
     function() {
 
       if (
-        thisSession !== voiceSession
+        thisSession !==
+        voiceSession
       ) {
+
         return;
+
       }
 
 
@@ -1971,38 +1591,22 @@ function startVoiceSearch() {
     };
 
 
-  recognition.onspeechend =
-    function() {
-
-      /*
-        NON facciamo stop().
-        Su iOS può contribuire al blocco.
-
-        Aspettiamo il risultato oppure
-        il timeout di sicurezza.
-      */
-
-    };
-
-
   recognition.onend =
     function() {
 
       if (
-        thisSession !== voiceSession
+        thisSession !==
+        voiceSession
       ) {
+
         return;
+
       }
 
 
-      /*
-        Se onend arriva normalmente
-        e non abbiamo già distrutto tutto,
-        resettiamo l'interfaccia.
-      */
-
       if (
-        voiceRecognition === recognition
+        voiceRecognition ===
+        recognition
       ) {
 
         destroyVoiceRecognition();
@@ -2029,6 +1633,7 @@ function startVoiceSearch() {
     );
 
   }
+
 }
 
 
@@ -2110,12 +1715,16 @@ function executeVoiceCommand(text) {
       .trim();
 
 
-  if (!value) {
+  if (
+    !value
+  ) {
 
     value =
       String(
         text || ''
-      ).trim();
+      )
+      .trim();
+
   }
 
 
@@ -2125,14 +1734,18 @@ function executeVoiceCommand(text) {
     );
 
 
-  if (input) {
+  if (
+    input
+  ) {
 
     input.value =
       value;
+
   }
 
 
   runSearch();
+
 }
 
 
@@ -2151,8 +1764,12 @@ function setVoiceMessage(
     );
 
 
-  if (!element) {
+  if (
+    !element
+  ) {
+
     return;
+
   }
 
 
@@ -2164,7 +1781,9 @@ function setVoiceMessage(
     'error',
     !!error
   );
+
 }
+
 
 /* =========================================================
    UTILITÀ
